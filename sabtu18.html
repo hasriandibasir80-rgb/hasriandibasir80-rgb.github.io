@@ -890,8 +890,7 @@
 
     function updateRekapMenyeluruh() {
       // ✅ PERBAIKAN RUMUS: (V3 × 2550) + (V5 × 4250)
-      const totalStokAwal = (stokData.v3.awal * HARGA_V3_AGEN) + (stokData.v5.awal * HARGA_V5_AGEN);
-
+      const totalStokAwal =  parseInt(document.getElementById('totalStokAwalInput').value) || 0;
       let totalPengambilan = 0;
       let totalSetoran = 0;
       transactions.forEach(transaction => {
@@ -1032,5 +1031,6 @@
 </body>
 
 </html>
+
 
 
