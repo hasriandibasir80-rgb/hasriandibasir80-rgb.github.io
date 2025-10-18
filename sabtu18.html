@@ -705,8 +705,8 @@
       stokData.v5.awal = parseInt(document.getElementById('stokAwalV5').value) || 0;
 
       // ❌ TIDAK LAGI MENGUNCI STOK AWAL
-      // document.getElementById('stokAwalV3').readonly', true);
-      // document.getElementById('stokAwalV5').readonly', true);
+      // document.getElementById('stokAwalV3').setAttribute('readonly', true);
+      // document.getElementById('stokAwalV5').setAttribute('readonly', true);
 
       calculateStokDrop();
       loadStokData();
@@ -1021,3 +1021,4 @@
 </body>
 
 </html>
+
