@@ -688,17 +688,28 @@
       }
     }
 
-    function loadStokData() {
-      calculateStokDrop();
-      document.getElementById('stokAwalV3').value = stokData.v3.awal || 0;
-      document.getElementById('stokAwalV5').value = stokData.v5.awal || 0;
-      document.getElementById('stokDropV3').value = stokData.v3.drop || 0;
-      document.getElementById('stokDropV5').value = stokData.v5.drop || 0;
-      const sisaV3 = Math.max(0, (stokData.v3.awal || 0) - (stokData.v3.drop || 0));
-      const sisaV5 = Math.max(0, (stokData.v5.awal || 0) - (stokData.v5.drop || 0));
-      document.getElementById('sisaStokV3').value = sisaV3;
-      document.getElementById('sisaStokV5').value = sisaV5;
-    }
+   function updateSisaStok() {
+  // Ambil nilai baru dari input stok awal
+  const stokAwalV3 = parseInt(document.getElementById('stokAwalV3').value) || 0;
+  const stokAwalV5 = parseInt(document.getElementById('stokAwalV5').value) || 0;
+
+  // Perbarui nilai stok awal di memori
+  stokData.v3.awal = stokAwalV3;
+  stokData.v5.awal = stokAwalV5;
+
+  // Pastikan stok drop tetap akurat (hitung ulang dari transaksi)
+  calculateStokDrop();
+
+  // Update tampilan stok drop (untuk konfirmasi)
+  document.getElementById('stokDropV3').value = stokData.v3.drop || 0;
+  document.getElementById('stokDropV5').value = stokData.v5.drop || 0;
+
+  // Hitung ulang sisa stok
+  const sisaV3 = Math.max(0, stokAwalV3 - stokData.v3.drop);
+  const sisaV5 = Math.max(0, stokAwalV5 - stokData.v5.drop);
+  document.getElementById('sisaStokV3').value = sisaV3;
+  document.getElementById('sisaStokV5').value = sisaV5;
+}
 
     function saveStok() {
       stokData.v3.awal = parseInt(document.getElementById('stokAwalV3').value) || 0;
@@ -1021,4 +1032,5 @@
 </body>
 
 </html>
+
 
