@@ -190,8 +190,6 @@
           <tr><td>6. Total sisa yang belum ditransfer</td><td id="rek6">0</td></tr>
           <tr><td>7. Total dana dalam bentuk barang</td><td id="rek7">0</td></tr>
         </table>
-        <!-- Opsional: jika masih ingin simpan catatan lain, pertahankan tombol -->
-        <!-- Tapi karena rek5 otomatis, tidak perlu simpan manual -->
       </div>
     </div>
     <!-- MODAL TAMBAH/EDIT AGEN -->
@@ -211,6 +209,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyC45P_1xbNL8zi3e0aS4kHkIGvRvGEAmwM",
       authDomain: "takkoandi-8e99e.firebaseapp.com",
+      // 🔥 PERBAIKAN: HAPUS SPASI DI AKHIR URL
       databaseURL: "https://takkoandi-8e99e-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "takkoandi-8e99e",
       storageBucket: "takkoandi-8e99e.firebasestorage.app",
@@ -280,7 +279,19 @@
         const list = snap.val() || [];
         const sel = document.getElementById("periodeSelect");
         sel.innerHTML = "";
-        if (list.length === 0) return;
+
+        if (list.length === 0) {
+          // Tampilkan placeholder jika belum ada periode
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "-- Belum ada periode --";
+          opt.disabled = true;
+          sel.appendChild(opt);
+          if (currentUser === "andi") {
+            document.getElementById("btnSetActive").style.display = "none";
+          }
+          return;
+        }
 
         const sortedList = list.map(Number).sort((a, b) => a - b).map(String);
 
@@ -302,20 +313,29 @@
           sel.appendChild(opt);
         });
 
+        let periodeToSelect = "";
         if (currentUser === "andi") {
-          const last = localStorage.getItem("last_periode") || globalActivePeriode || sortedList[sortedList.length - 1];
-          if (sortedList.includes(last)) {
-            sel.value = last;
-          } else {
-            sel.value = globalActivePeriode || sortedList[sortedList.length - 1];
+          // Coba ambil dari localStorage, lalu fallback ke globalActivePeriode, lalu terakhir
+          periodeToSelect = localStorage.getItem("last_periode") || globalActivePeriode || sortedList[sortedList.length - 1];
+          if (!sortedList.includes(periodeToSelect)) {
+            periodeToSelect = globalActivePeriode || sortedList[sortedList.length - 1];
           }
           document.getElementById("btnSetActive").style.display = "inline-block";
         } else {
-          sel.value = globalActivePeriode || sortedList[sortedList.length - 1];
+          periodeToSelect = globalActivePeriode || sortedList[sortedList.length - 1];
         }
 
-        currentPeriode = sel.value;
-        loadPeriode();
+        if (sortedList.includes(periodeToSelect)) {
+          sel.value = periodeToSelect;
+          currentPeriode = periodeToSelect;
+          loadPeriode();
+        } else {
+          sel.value = "";
+          currentPeriode = null;
+          if (currentUser === "andi") {
+            document.getElementById("btnSetActive").style.display = "none";
+          }
+        }
       });
     }
 
@@ -326,7 +346,9 @@
       db.ref("settings/active_periode").set(selected).then(() => {
         globalActivePeriode = selected;
         alert(`Periode ${selected} sekarang aktif untuk pengguna.`);
-        loadPeriodeList();
+        loadPeriodeList(); // refresh tampilan
+      }).catch(err => {
+        alert("Gagal menetapkan periode aktif: " + err.message);
       });
     }
 
@@ -337,10 +359,14 @@
         const list = snap.val() || [];
         if (!list.includes(p)) {
           list.push(p);
-          db.ref("periode_list").set(list);
-          db.ref(`data/${p}/agen`).set(AGEN_DEFAULT).then(() => {
+          db.ref("periode_list").set(list).then(() => {
+            // Buat struktur data dasar untuk periode baru
+            return db.ref(`data/${p}/agen`).set(AGEN_DEFAULT);
+          }).then(() => {
             alert(`Periode ${p} berhasil dibuat.`);
-            loadPeriodeList();
+            loadPeriodeList(); // 🔁 ini akan memicu pemilihan otomatis
+          }).catch(err => {
+            alert("Gagal membuat periode: " + err.message);
           });
         } else {
           alert("Periode sudah ada!");
@@ -388,9 +414,6 @@
           document.getElementById("btnSimpanStok").style.display = "none";
         }
       });
-
-      // ❌ Tidak perlu baca rekap_manual untuk rek5 lagi
-      // Karena rek5 sekarang otomatis dari TF
 
       db.ref(`data/${currentPeriode}/agen`).once("value", (snap) => {
         agenCache = snap.val() || {};
@@ -480,12 +503,11 @@
         data.tgl = tgl;
         data.nominal = nominal;
       } else if (jenis === "tf") {
-        // ✅ TRANSFER BARU
         const tglTf = document.getElementById("tglTf").value;
         const jumlahTf = parseInt(document.getElementById("jumlahTf").value) || 0;
         if (!tglTf || jumlahTf <= 0) return alert("Isi tanggal dan jumlah transfer");
         data.tgl = tglTf;
-        data.nominal = jumlahTf; // simpan sebagai nominal untuk konsistensi
+        data.nominal = jumlahTf;
       } else {
         return;
       }
@@ -498,7 +520,6 @@
       ["v3Ambil", "v5Ambil", "nominalSetor", "jumlahTf"].forEach(id => {
         document.getElementById(id).value = "";
       });
-      // Reset tanggal juga (opsional)
       document.getElementById("tglTf").value = "";
     }
 
@@ -513,7 +534,7 @@
         const agenMap = {};
         let totalPengambilan = 0;
         let totalSetoran = 0;
-        let totalTf = 0; // ✅ total transfer
+        let totalTf = 0;
         let totalV3 = 0, totalV5 = 0;
 
         Object.entries(trans).forEach(([key, t]) => {
@@ -580,36 +601,24 @@
           document.getElementById("sisaV3").textContent = sisaV3;
           document.getElementById("sisaV5").textContent = sisaV5;
 
-          // ✅ Poin 2
           const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
           document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
-
-          // ✅ Poin 3
           document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
 
-          // ✅ Poin 1
           const totalStokAwal = (stok.v3 * 2550) + (stok.v5 * 4250);
           document.getElementById("rek1").textContent = totalStokAwal.toLocaleString();
 
-          // ✅ Poin 4
           const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
           document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
 
-          // ✅ Poin 5: OTOMATIS DARI TOTAL TF
           document.getElementById("rek5").textContent = totalTf.toLocaleString();
-
-          // ✅ Poin 6
           document.getElementById("rek6").textContent = (totalGlobal - totalTf).toLocaleString();
 
-          // ✅ Poin 7
           const danaBarang = (sisaV3 * 2550) + (sisaV5 * 4250);
           document.getElementById("rek7").textContent = danaBarang.toLocaleString();
         });
       });
     }
-
-    // ❌ Fungsi simpanRekapManual dihapus atau tidak dipakai
-    // Karena semua rekap sekarang otomatis
 
     function editTransaksi(key, data) {
       if (confirm("Edit transaksi ini?")) {
