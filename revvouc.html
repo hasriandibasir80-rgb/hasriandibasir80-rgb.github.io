@@ -141,6 +141,13 @@
           <input type="number" id="nominalSetor" placeholder="Nominal (Rp)" min="0" />
           <button onclick="simpanTransaksi('setor')">Simpan Penyetoran</button>
         </div>
+        <!-- ✅ SUB FITUR TF BARU -->
+        <div style="margin-top: 15px;">
+          <h4>Transfer ke Global</h4>
+          <input type="date" id="tglTf" />
+          <input type="number" id="jumlahTf" placeholder="Jumlah Transfer (Rp)" min="0" />
+          <button onclick="simpanTransaksi('tf')">Simpan TF</button>
+        </div>
       </div>
       <!-- REKAP PER AGEN -->
       <div class="section">
@@ -179,17 +186,12 @@
           <tr><td>2. Total yang belum diterima</td><td id="rek2">0</td></tr>
           <tr><td>3. Total yang sudah diterima dari agen</td><td id="rek3">0</td></tr>
           <tr><td>4. Total yang akan ditransfer ke Global</td><td id="rek4">0</td></tr>
-          <tr>
-            <td>5. Total yang sudah ditransfer ke Global</td>
-            <td>
-              <input id="rek5Input" type="number" placeholder="Nominal (Rp)" style="width:120px;" />
-              <input type="date" id="rek5Tgl" style="width:140px; margin-left:6px;" />
-            </td>
-          </tr>
+          <tr><td>5. Total yang sudah ditransfer ke Global</td><td id="rek5">0</td></tr>
           <tr><td>6. Total sisa yang belum ditransfer</td><td id="rek6">0</td></tr>
           <tr><td>7. Total dana dalam bentuk barang</td><td id="rek7">0</td></tr>
         </table>
-        <button onclick="simpanRekapManual()">Simpan Rekap Manual</button>
+        <!-- Opsional: jika masih ingin simpan catatan lain, pertahankan tombol -->
+        <!-- Tapi karena rek5 otomatis, tidak perlu simpan manual -->
       </div>
     </div>
     <!-- MODAL TAMBAH/EDIT AGEN -->
@@ -387,11 +389,8 @@
         }
       });
 
-      db.ref(`data/${currentPeriode}/rekap_manual`).once("value", s => {
-        const r = s.val() || {};
-        document.getElementById("rek5Input").value = r.rek5 || "";
-        document.getElementById("rek5Tgl").value = r.rek5_tgl || "";
-      });
+      // ❌ Tidak perlu baca rekap_manual untuk rek5 lagi
+      // Karena rek5 sekarang otomatis dari TF
 
       db.ref(`data/${currentPeriode}/agen`).once("value", (snap) => {
         agenCache = snap.val() || {};
@@ -460,23 +459,35 @@
     }
 
     function simpanTransaksi(jenis) {
-      const now = new Date().toISOString().split("T")[0];
-      let data = { tgl: now, jenis };
+      let data = { jenis };
       if (jenis === "ambil") {
         const agen = document.getElementById("agenAmbil").value;
         const v3 = parseInt(document.getElementById("v3Ambil").value) || 0;
         const v5 = parseInt(document.getElementById("v5Ambil").value) || 0;
+        const tgl = document.getElementById("tglAmbil").value || new Date().toISOString().split("T")[0];
         if (!agen || (v3 === 0 && v5 === 0)) return alert("Pilih agen dan isi V3/V5");
         data.agen = agen;
         data.v3 = v3;
         data.v5 = v5;
+        data.tgl = tgl;
         data.nominal = v3 * HARGA_V3_AGEN + v5 * HARGA_V5_AGEN;
-      } else {
+      } else if (jenis === "setor") {
         const agen = document.getElementById("agenSetor").value;
         const nominal = parseInt(document.getElementById("nominalSetor").value) || 0;
+        const tgl = document.getElementById("tglSetor").value || new Date().toISOString().split("T")[0];
         if (!agen || nominal <= 0) return alert("Pilih agen dan isi nominal");
         data.agen = agen;
+        data.tgl = tgl;
         data.nominal = nominal;
+      } else if (jenis === "tf") {
+        // ✅ TRANSFER BARU
+        const tglTf = document.getElementById("tglTf").value;
+        const jumlahTf = parseInt(document.getElementById("jumlahTf").value) || 0;
+        if (!tglTf || jumlahTf <= 0) return alert("Isi tanggal dan jumlah transfer");
+        data.tgl = tglTf;
+        data.nominal = jumlahTf; // simpan sebagai nominal untuk konsistensi
+      } else {
+        return;
       }
       db.ref(`data/${currentPeriode}/transaksi`).push(data);
       resetFormTransaksi();
@@ -484,9 +495,11 @@
     }
 
     function resetFormTransaksi() {
-      ["v3Ambil", "v5Ambil", "nominalSetor"].forEach(id => {
+      ["v3Ambil", "v5Ambil", "nominalSetor", "jumlahTf"].forEach(id => {
         document.getElementById(id).value = "";
       });
+      // Reset tanggal juga (opsional)
+      document.getElementById("tglTf").value = "";
     }
 
     function loadAllData() {
@@ -500,24 +513,27 @@
         const agenMap = {};
         let totalPengambilan = 0;
         let totalSetoran = 0;
+        let totalTf = 0; // ✅ total transfer
         let totalV3 = 0, totalV5 = 0;
 
         Object.entries(trans).forEach(([key, t]) => {
           const ambil = t.jenis === "ambil";
           const setor = t.jenis === "setor";
+          const tf = t.jenis === "tf";
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${t.tgl}</td>
-            <td>${agenCache[t.agen] || t.agen}</td>
+            <td>${tf ? "TRANSFER" : (agenCache[t.agen] || t.agen)}</td>
             <td>${ambil ? "BENAR" : "X"}</td>
             <td>${setor ? "BENAR" : "X"}</td>
             <td>${ambil ? t.v3 : ""}</td>
             <td>${ambil ? t.v5 : ""}</td>
             <td>Rp. ${t.nominal.toLocaleString()}</td>
             <td>
-              ${currentUser === "andi" ?
+              ${currentUser === "andi" && !tf ?
                 `<button onclick="editTransaksi('${key}', ${JSON.stringify(t).replace(/"/g, '&quot;')})">Edit</button>
-                 <button class="danger" onclick="hapusTransaksi('${key}')">Hapus</button>` : ""}
+                 <button class="danger" onclick="hapusTransaksi('${key}')">Hapus</button>` : 
+                (tf ? `<button class="danger" onclick="hapusTransaksi('${key}')">Hapus</button>` : "")}
             </td>
           `;
           tbodyR.appendChild(tr);
@@ -533,6 +549,9 @@
             totalSetoran += t.nominal;
             if (!agenMap[t.agen]) agenMap[t.agen] = { ambil: 0, setor: 0 };
             agenMap[t.agen].setor += t.nominal;
+          }
+          if (tf) {
+            totalTf += t.nominal;
           }
         });
 
@@ -561,14 +580,14 @@
           document.getElementById("sisaV3").textContent = sisaV3;
           document.getElementById("sisaV5").textContent = sisaV5;
 
-          // ✅ Poin 2: Total yang belum diterima
+          // ✅ Poin 2
           const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
           document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
 
           // ✅ Poin 3
           document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
 
-          // ✅ Poin 1: Total stok awal → otomatis dengan rumus eksplisit
+          // ✅ Poin 1
           const totalStokAwal = (stok.v3 * 2550) + (stok.v5 * 4250);
           document.getElementById("rek1").textContent = totalStokAwal.toLocaleString();
 
@@ -576,23 +595,21 @@
           const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
           document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
 
+          // ✅ Poin 5: OTOMATIS DARI TOTAL TF
+          document.getElementById("rek5").textContent = totalTf.toLocaleString();
+
+          // ✅ Poin 6
+          document.getElementById("rek6").textContent = (totalGlobal - totalTf).toLocaleString();
+
           // ✅ Poin 7
           const danaBarang = (sisaV3 * 2550) + (sisaV5 * 4250);
           document.getElementById("rek7").textContent = danaBarang.toLocaleString();
-
-          // ✅ Poin 6
-          const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
-          document.getElementById("rek6").textContent = (totalGlobal - rek5).toLocaleString();
         });
       });
     }
 
-    function simpanRekapManual() {
-      const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
-      const rek5_tgl = document.getElementById("rek5Tgl").value;
-      db.ref(`data/${currentPeriode}/rekap_manual`).set({ rek5, rek5_tgl });
-      loadAllData();
-    }
+    // ❌ Fungsi simpanRekapManual dihapus atau tidak dipakai
+    // Karena semua rekap sekarang otomatis
 
     function editTransaksi(key, data) {
       if (confirm("Edit transaksi ini?")) {
@@ -601,9 +618,11 @@
             document.getElementById("agenAmbil").value = data.agen;
             document.getElementById("v3Ambil").value = data.v3;
             document.getElementById("v5Ambil").value = data.v5;
-          } else {
+            document.getElementById("tglAmbil").value = data.tgl;
+          } else if (data.jenis === "setor") {
             document.getElementById("agenSetor").value = data.agen;
             document.getElementById("nominalSetor").value = data.nominal;
+            document.getElementById("tglSetor").value = data.tgl;
           }
           simpanTransaksi(data.jenis);
         });
