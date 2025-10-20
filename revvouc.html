@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -204,7 +203,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyC45P_1xbNL8zi3e0aS4kHkIGvRvGEAmwM",
       authDomain: "takkoandi-8e99e.firebaseapp.com",
-      databaseURL: "https://takkoandi-8e99e-default-rtdb.asia-southeast1.firebasedatabase.app", // ← spasi dihapus
+      databaseURL: "https://takkoandi-8e99e-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "takkoandi-8e99e",
       storageBucket: "takkoandi-8e99e.firebasestorage.app",
       messagingSenderId: "117264025083",
@@ -555,21 +554,26 @@
           document.getElementById("sisaV3").textContent = sisaV3;
           document.getElementById("sisaV5").textContent = sisaV5;
 
-          // 🔧 PERBAIKAN UTAMA: hitung "Total yang belum diterima"
+          // ✅ PERBAIKAN: Poin 2 — Total yang belum diterima
           const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
           document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
 
+          // ✅ Poin 3
           document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
 
+          // ✅ Poin 1 — otomatis dari stok awal
           const totalStokAwal = stok.v3 * HARGA_V3_AGEN + stok.v5 * HARGA_V5_AGEN;
           document.getElementById("rek1").textContent = `Rp. ${totalStokAwal.toLocaleString()}`;
 
+          // ✅ Poin 4
           const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
           document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
 
-          const danaBarang = sisaV3 * HARGA_V3_AGEN + sisaV5 * HARGA_V5_AGEN;
+          // ✅ PERBAIKAN: Poin 7 — sesuai rumus Anda
+          const danaBarang = (sisaV3 * 2550) + (sisaV5 * 4250);
           document.getElementById("rek7").textContent = danaBarang.toLocaleString();
 
+          // ✅ Poin 6
           const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
           document.getElementById("rek6").textContent = (totalGlobal - rek5).toLocaleString();
         });
