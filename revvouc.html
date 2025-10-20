@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -175,7 +176,7 @@
       <div class="section">
         <h3>Rekap Keseluruhan</h3>
         <table>
-          <tr><td>1. Total stok awal</td><td><input id="rek1Input" type="number" placeholder="Input manual" /></td></tr>
+          <tr><td>1. Total stok awal</td><td id="rek1">Rp. 0</td></tr>
           <tr><td>2. Total yang belum diterima</td><td id="rek2">0</td></tr>
           <tr><td>3. Total yang sudah diterima dari agen</td><td id="rek3">0</td></tr>
           <tr><td>4. Total yang akan ditransfer ke Global</td><td id="rek4">0</td></tr>
@@ -203,7 +204,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyC45P_1xbNL8zi3e0aS4kHkIGvRvGEAmwM",
       authDomain: "takkoandi-8e99e.firebaseapp.com",
-      databaseURL: "https://takkoandi-8e99e-default-rtdb.asia-southeast1.firebasedatabase.app",
+      databaseURL: "https://takkoandi-8e99e-default-rtdb.asia-southeast1.firebasedatabase.app", // ← spasi dihapus
       projectId: "takkoandi-8e99e",
       storageBucket: "takkoandi-8e99e.firebasestorage.app",
       messagingSenderId: "117264025083",
@@ -246,7 +247,7 @@
           document.getElementById("btnTambahAgen").style.display = "none";
           document.getElementById("headerTitle").textContent = "Pembukuan Voucher (Pengguna)";
         }
-        loadActivePeriodeSetting(); // <-- Baca periode aktif global
+        loadActivePeriodeSetting();
       } else {
         document.getElementById("loginError").textContent = "Username atau password salah";
       }
@@ -276,7 +277,6 @@
 
         const sortedList = list.map(Number).sort((a, b) => a - b).map(String);
 
-        // Tampilkan SEMUA periode untuk SEMUA user
         sortedList.forEach(p => {
           const opt = document.createElement("option");
           opt.value = p;
@@ -295,9 +295,7 @@
           sel.appendChild(opt);
         });
 
-        // Set nilai default
         if (currentUser === "andi") {
-          // Admin: pilih periode terakhir yang dipilih, atau fallback ke active
           const last = localStorage.getItem("last_periode") || globalActivePeriode || sortedList[sortedList.length - 1];
           if (sortedList.includes(last)) {
             sel.value = last;
@@ -306,7 +304,6 @@
           }
           document.getElementById("btnSetActive").style.display = "inline-block";
         } else {
-          // Pengguna: selalu ke periode aktif
           sel.value = globalActivePeriode || sortedList[sortedList.length - 1];
         }
 
@@ -322,7 +319,7 @@
       db.ref("settings/active_periode").set(selected).then(() => {
         globalActivePeriode = selected;
         alert(`Periode ${selected} sekarang aktif untuk pengguna.`);
-        loadPeriodeList(); // refresh tampilan
+        loadPeriodeList();
       });
     }
 
@@ -362,7 +359,6 @@
       currentPeriode = document.getElementById("periodeSelect").value;
       if (!currentPeriode) return;
 
-      // Simpan periode terakhir untuk admin
       if (currentUser === "andi") {
         localStorage.setItem("last_periode", currentPeriode);
       }
@@ -388,7 +384,6 @@
 
       db.ref(`data/${currentPeriode}/rekap_manual`).once("value", s => {
         const r = s.val() || {};
-        document.getElementById("rek1Input").value = r.rek1 || "";
         document.getElementById("rek5Input").value = r.rek5 || "";
       });
 
@@ -423,7 +418,6 @@
       });
     }
 
-    // === STOK (HANYA ADMIN BISA SIMPAN) ===
     function simpanStok() {
       if (currentUser !== "andi") return;
       const v3 = parseInt(document.getElementById("stokV3").value) || 0;
@@ -432,7 +426,6 @@
       loadAllData();
     }
 
-    // === FUNGSI LAINNYA (TIDAK BERUBAH) ===
     function simpanCatatan() {
       db.ref(`data/${currentPeriode}/catatan`).set(document.getElementById("catatan").value);
     }
@@ -561,12 +554,22 @@
           const sisaV5 = Math.max(0, stok.v5 - totalV5);
           document.getElementById("sisaV3").textContent = sisaV3;
           document.getElementById("sisaV5").textContent = sisaV5;
-          document.getElementById("rek2").textContent = totalPengambilan.toLocaleString();
+
+          // 🔧 PERBAIKAN UTAMA: hitung "Total yang belum diterima"
+          const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
+          document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
+
           document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
+
+          const totalStokAwal = stok.v3 * HARGA_V3_AGEN + stok.v5 * HARGA_V5_AGEN;
+          document.getElementById("rek1").textContent = `Rp. ${totalStokAwal.toLocaleString()}`;
+
           const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
           document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
+
           const danaBarang = sisaV3 * HARGA_V3_AGEN + sisaV5 * HARGA_V5_AGEN;
           document.getElementById("rek7").textContent = danaBarang.toLocaleString();
+
           const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
           document.getElementById("rek6").textContent = (totalGlobal - rek5).toLocaleString();
         });
@@ -574,9 +577,8 @@
     }
 
     function simpanRekapManual() {
-      const rek1 = parseInt(document.getElementById("rek1Input").value) || 0;
       const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
-      db.ref(`data/${currentPeriode}/rekap_manual`).set({ rek1, rek5 });
+      db.ref(`data/${currentPeriode}/rekap_manual`).set({ rek5 });
       loadAllData();
     }
 
