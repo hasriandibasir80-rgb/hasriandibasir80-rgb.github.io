@@ -175,11 +175,17 @@
       <div class="section">
         <h3>Rekap Keseluruhan</h3>
         <table>
-          <tr><td>1. Total stok awal</td><td id="rek1">Rp. 0</td></tr>
+          <tr><td>1. Total stok awal</td><td id="rek1">0</td></tr>
           <tr><td>2. Total yang belum diterima</td><td id="rek2">0</td></tr>
           <tr><td>3. Total yang sudah diterima dari agen</td><td id="rek3">0</td></tr>
           <tr><td>4. Total yang akan ditransfer ke Global</td><td id="rek4">0</td></tr>
-          <tr><td>5. Total yang sudah ditransfer ke Global</td><td><input id="rek5Input" type="number" placeholder="Input manual" /></td></tr>
+          <tr>
+            <td>5. Total yang sudah ditransfer ke Global</td>
+            <td>
+              <input id="rek5Input" type="number" placeholder="Nominal (Rp)" style="width:120px;" />
+              <input type="date" id="rek5Tgl" style="width:140px; margin-left:6px;" />
+            </td>
+          </tr>
           <tr><td>6. Total sisa yang belum ditransfer</td><td id="rek6">0</td></tr>
           <tr><td>7. Total dana dalam bentuk barang</td><td id="rek7">0</td></tr>
         </table>
@@ -384,6 +390,7 @@
       db.ref(`data/${currentPeriode}/rekap_manual`).once("value", s => {
         const r = s.val() || {};
         document.getElementById("rek5Input").value = r.rek5 || "";
+        document.getElementById("rek5Tgl").value = r.rek5_tgl || "";
       });
 
       db.ref(`data/${currentPeriode}/agen`).once("value", (snap) => {
@@ -554,22 +561,22 @@
           document.getElementById("sisaV3").textContent = sisaV3;
           document.getElementById("sisaV5").textContent = sisaV5;
 
-          // ✅ PERBAIKAN: Poin 2 — Total yang belum diterima
+          // ✅ Poin 2: Total yang belum diterima
           const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
           document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
 
           // ✅ Poin 3
           document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
 
-          // ✅ Poin 1 — otomatis dari stok awal
-          const totalStokAwal = stok.v3 * HARGA_V3_AGEN + stok.v5 * HARGA_V5_AGEN;
-          document.getElementById("rek1").textContent = `Rp. ${totalStokAwal.toLocaleString()}`;
+          // ✅ Poin 1: Total stok awal → otomatis dengan rumus eksplisit
+          const totalStokAwal = (stok.v3 * 2550) + (stok.v5 * 4250);
+          document.getElementById("rek1").textContent = totalStokAwal.toLocaleString();
 
           // ✅ Poin 4
           const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
           document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
 
-          // ✅ PERBAIKAN: Poin 7 — sesuai rumus Anda
+          // ✅ Poin 7
           const danaBarang = (sisaV3 * 2550) + (sisaV5 * 4250);
           document.getElementById("rek7").textContent = danaBarang.toLocaleString();
 
@@ -582,7 +589,8 @@
 
     function simpanRekapManual() {
       const rek5 = parseInt(document.getElementById("rek5Input").value) || 0;
-      db.ref(`data/${currentPeriode}/rekap_manual`).set({ rek5 });
+      const rek5_tgl = document.getElementById("rek5Tgl").value;
+      db.ref(`data/${currentPeriode}/rekap_manual`).set({ rek5, rek5_tgl });
       loadAllData();
     }
 
