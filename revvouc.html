@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -50,7 +51,6 @@
     button.danger { background: #dc3545; }
     button.danger:hover { background: #c82333; }
 
-    /* Warna tombol menu */
     .menu-btn {
       padding: 14px;
       font-weight: bold;
@@ -99,6 +99,28 @@
       background: #f5f5f5;
       color: #666;
     }
+    .catatan-item {
+      background: #f8f9fa;
+      border-left: 4px solid #007bff;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .catatan-header {
+      font-weight: bold;
+      color: #007bff;
+      margin-bottom: 4px;
+    }
+    .catatan-text {
+      white-space: pre-wrap;
+    }
+    .mode-view {
+      display: none;
+    }
+    .mode-view.active {
+      display: block;
+    }
     @media (max-width: 600px) {
       .section { padding: 12px; }
       input, select, button { font-size: 14px; padding: 6px; }
@@ -138,7 +160,7 @@
         <label><strong>Periode:</strong></label>
         <select id="periodeSelect" onchange="loadPeriode()"></select>
         <button id="btnSetActive" onclick="setActivePeriode()" style="display:none;">Tetapkan sebagai Aktif</button>
-        <button id="btnTambahPeriode" onclick="tambahPeriode()">+ Tambah Periode</button>
+        <button id="btnTambahPeriode" onclick="tambahPeriode()" style="display:none;">+ Tambah Periode</button>
         <button id="btnBackup" onclick="backupData()">Backup</button>
       </div>
 
@@ -217,8 +239,29 @@
       <div class="section" id="sectionNota">
         <button onclick="kembaliKeBeranda()">← Kembali ke Beranda</button>
         <h3>Catatan Penting</h3>
-        <textarea id="catatan" rows="3" style="width: 100%;"></textarea>
-        <button onclick="simpanCatatan()">Simpan Catatan</button>
+
+        <!-- Pilihan Awal -->
+        <div id="pilihanNota">
+          <button onclick="tampilkanModeBaca()">1. Baca Catatan Penting</button>
+          <button onclick="tampilkanModeBuat()">2. Tulis Catatan Penting Baru</button>
+        </div>
+
+        <!-- Mode Baca: Daftar Catatan -->
+        <div id="modeBaca" style="display:none;">
+          <button onclick="kembaliKePilihanNota()">← Kembali ke Pilihan</button>
+          <h4>Catatan Tersimpan (Periode: <span id="periodeDiNota">-</span>)</h4>
+          <div id="daftarCatatan">
+            <p>Memuat catatan...</p>
+          </div>
+        </div>
+
+        <!-- Mode Buat: Form Input -->
+        <div id="modeBuat" style="display:none;">
+          <button onclick="kembaliKePilihanNota()">← Kembali ke Pilihan</button>
+          <h4>Tulis Catatan Baru</h4>
+          <textarea id="inputCatatanBaru" rows="4" placeholder="Ketik catatan penting di sini..." style="width:100%;"></textarea>
+          <button onclick="simpanCatatanBaru()">Simpan</button>
+        </div>
       </div>
 
       <!-- STOK -->
@@ -277,6 +320,7 @@
       let currentPeriode = null;
       let globalActivePeriode = null;
       let agenCache = {};
+      let transaksiListener = null;
 
       // === NAVIGASI BARU ===
       function tampilkanMenu() {
@@ -306,6 +350,33 @@
         document.getElementById("app").style.display = "block";
         document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        if (id === "sectionNota") {
+          tampilkanPilihanAwal();
+        }
+      }
+
+      function tampilkanPilihanAwal() {
+        document.getElementById('pilihanNota').style.display = 'block';
+        document.getElementById('modeBaca').style.display = 'none';
+        document.getElementById('modeBuat').style.display = 'none';
+      }
+
+      function tampilkanModeBaca() {
+        document.getElementById('pilihanNota').style.display = 'none';
+        document.getElementById('modeBuat').style.display = 'none';
+        document.getElementById('modeBaca').style.display = 'block';
+        document.getElementById('periodeDiNota').textContent = globalActivePeriode || 'Tidak ada';
+        loadCatatan();
+      }
+
+      function tampilkanModeBuat() {
+        document.getElementById('pilihanNota').style.display = 'none';
+        document.getElementById('modeBaca').style.display = 'none';
+        document.getElementById('modeBuat').style.display = 'block';
+      }
+
+      function kembaliKePilihanNota() {
+        tampilkanPilihanAwal();
       }
 
       // === LOGIN ===
@@ -327,13 +398,21 @@
       }
 
       function logout() {
+        if (transaksiListener) {
+          transaksiListener();
+          transaksiListener = null;
+        }
         currentUser = null;
+        currentPeriode = null;
+        globalActivePeriode = null;
+        agenCache = {};
         document.getElementById("loginScreen").style.display = "block";
         document.getElementById("app").style.display = "none";
         document.getElementById("menuUtama").style.display = "none";
+        tampilkanPilihanAwal();
       }
 
-      // === FUNGSI PERIODE & DATA (TIDAK DIUBAH) ===
+      // === FUNGSI PERIODE & DATA ===
       function loadActivePeriodeSetting() {
         db.ref("settings/active_periode").once("value", (snap) => {
           globalActivePeriode = snap.val() || null;
@@ -346,45 +425,56 @@
           const list = snap.val() || [];
           const sel = document.getElementById("periodeSelect");
           sel.innerHTML = "";
+          
+          document.getElementById("btnTambahPeriode").style.display = (currentUser === "andi") ? "inline-block" : "none";
+
           if (list.length === 0) {
             const opt = document.createElement("option");
             opt.value = "";
             opt.textContent = "-- Belum ada periode --";
             opt.disabled = true;
             sel.appendChild(opt);
-            if (currentUser === "andi") {
-              document.getElementById("btnSetActive").style.display = "none";
-            }
+            document.getElementById("btnSetActive").style.display = "none";
             return;
           }
-          const sortedList = list.map(Number).sort((a, b) => a - b).map(String);
+
+          let sortedList;
+          if (currentUser === "andi" && globalActivePeriode && list.includes(globalActivePeriode)) {
+            const others = list.filter(p => p !== globalActivePeriode).map(Number).sort((a, b) => a - b).map(String);
+            sortedList = [globalActivePeriode, ...others];
+          } else {
+            sortedList = list.map(Number).sort((a, b) => a - b).map(String);
+          }
+
           sortedList.forEach(p => {
             const opt = document.createElement("option");
             opt.value = p;
             if (currentUser === "andi") {
-              opt.textContent = p;
+              opt.textContent = p + (p === globalActivePeriode ? " (Aktif)" : "");
               opt.disabled = false;
             } else {
               if (p === globalActivePeriode) {
                 opt.textContent = p + " (Aktif)";
                 opt.disabled = false;
               } else {
-                opt.textContent = p + "  🔒 ";
+                opt.textContent = p + " 🔒 ";
                 opt.disabled = true;
               }
             }
             sel.appendChild(opt);
           });
+
           let periodeToSelect = "";
           if (currentUser === "andi") {
-            periodeToSelect = localStorage.getItem("last_periode") || globalActivePeriode || sortedList[sortedList.length - 1];
+            periodeToSelect = localStorage.getItem("last_periode") || globalActivePeriode || sortedList[0];
             if (!sortedList.includes(periodeToSelect)) {
-              periodeToSelect = globalActivePeriode || sortedList[sortedList.length - 1];
+              periodeToSelect = globalActivePeriode || sortedList[0];
             }
             document.getElementById("btnSetActive").style.display = "inline-block";
           } else {
-            periodeToSelect = globalActivePeriode || sortedList[sortedList.length - 1];
+            periodeToSelect = globalActivePeriode || sortedList[0];
           }
+
           if (sortedList.includes(periodeToSelect)) {
             sel.value = periodeToSelect;
             currentPeriode = periodeToSelect;
@@ -392,9 +482,7 @@
           } else {
             sel.value = "";
             currentPeriode = null;
-            if (currentUser === "andi") {
-              document.getElementById("btnSetActive").style.display = "none";
-            }
+            document.getElementById("btnSetActive").style.display = "none";
           }
         });
       }
@@ -413,6 +501,7 @@
       }
 
       function tambahPeriode() {
+        if (currentUser !== "andi") return;
         const p = prompt("Masukkan periode (angka, contoh: 202510):");
         if (!p || isNaN(p)) return;
         db.ref("periode_list").once("value", (snap) => {
@@ -449,13 +538,31 @@
 
       function loadPeriode() {
         currentPeriode = document.getElementById("periodeSelect").value;
-        if (!currentPeriode) return;
-        if (currentUser === "andi") {
-          localStorage.setItem("last_periode", currentPeriode);
+        if (!currentPeriode) {
+          document.querySelectorAll("#sectionTransaksi input, #sectionTransaksi select").forEach(el => el.disabled = true);
+          document.querySelectorAll("#sectionTransaksi button[onclick*='simpanTransaksi']").forEach(btn => btn.style.display = "none");
+          return;
         }
-        db.ref(`data/${currentPeriode}/catatan`).once("value", s => {
-          document.getElementById("catatan").value = s.val() || "";
+
+        const isActive = (currentPeriode === globalActivePeriode);
+        const isEditable = (currentUser === "andi") || (isActive && currentUser !== "andi");
+
+        const transaksiInputs = [
+          "agenAmbil", "tglAmbil", "v3Ambil", "v5Ambil",
+          "agenSetor", "tglSetor", "nominalSetor",
+          "tglTf", "jumlahTf"
+        ];
+
+        transaksiInputs.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.disabled = !isEditable;
         });
+
+        const simpanButtons = document.querySelectorAll("#sectionTransaksi button[onclick*='simpanTransaksi']");
+        simpanButtons.forEach(btn => {
+          btn.style.display = isEditable ? "inline-block" : "none";
+        });
+
         db.ref(`data/${currentPeriode}/stok`).once("value", s => {
           const stok = s.val() || { v3: 0, v5: 0 };
           if (currentUser === "andi") {
@@ -470,6 +577,7 @@
             document.getElementById("btnSimpanStok").style.display = "none";
           }
         });
+
         db.ref(`data/${currentPeriode}/agen`).once("value", (snap) => {
           agenCache = snap.val() || {};
           isiDropdownAgen();
@@ -495,20 +603,77 @@
         if (currentUser !== "andi") return;
         const v3 = parseInt(document.getElementById("stokV3").value) || 0;
         const v5 = parseInt(document.getElementById("stokV5").value) || 0;
-        db.ref(`data/${currentPeriode}/stok`).set({ v3, v5 });
-        loadAllData();
+        db.ref(`data/${currentPeriode}/stok`).set({ v3, v5 }).then(() => {
+          loadAllData();
+        });
       }
 
-      function simpanCatatan() {
-        db.ref(`data/${currentPeriode}/catatan`).set(document.getElementById("catatan").value);
+      // === NOTA ===
+      function simpanCatatanBaru() {
+        if (!currentUser) {
+          alert("Anda belum login.");
+          return;
+        }
+        if (!globalActivePeriode) {
+          alert("Belum ada periode aktif. Catatan tidak bisa disimpan.");
+          return;
+        }
+        const text = document.getElementById("inputCatatanBaru").value.trim();
+        if (!text) {
+          alert("Catatan tidak boleh kosong.");
+          return;
+        }
+
+        const now = new Date();
+        db.ref(`data/${globalActivePeriode}/catatan`).push({
+          user: currentUser,
+          text: text,
+          timestamp: now.getTime(),
+          dateDisplay: now.toLocaleString("id-ID")
+        }).then(() => {
+          alert("Catatan berhasil disimpan.");
+          document.getElementById("inputCatatanBaru").value = "";
+          tampilkanModeBaca();
+        }).catch(err => {
+          console.error(err);
+          alert("Gagal menyimpan catatan.");
+        });
       }
 
-      function tambahAgenForm() {
-        document.getElementById("modalId").value = "";
-        document.getElementById("modalNama").value = "";
-        document.getElementById("modalAgen").style.display = "block";
+      function loadCatatan() {
+        if (!globalActivePeriode) {
+          document.getElementById("daftarCatatan").innerHTML = "<p>Belum ada periode aktif.</p>";
+          return;
+        }
+
+        const container = document.getElementById("daftarCatatan");
+        container.innerHTML = "<p>Memuat catatan...</p>";
+        db.ref(`data/${globalActivePeriode}/catatan`)
+          .orderByChild("timestamp")
+          .once("value", (snapshot) => {
+            container.innerHTML = "";
+            const data = snapshot.val();
+            if (!data) {
+              container.innerHTML = "<p>Belum ada catatan.</p>";
+              return;
+            }
+            const entries = Object.values(data);
+            entries.sort((a, b) => b.timestamp - a.timestamp);
+            entries.forEach(entry => {
+              const div = document.createElement("div");
+              div.className = "catatan-item";
+              div.innerHTML = `
+                <div class="catatan-header">
+                  Oleh: <strong>${entry.user}</strong> — ${entry.dateDisplay}
+                </div>
+                <div class="catatan-text">${entry.text}</div>
+              `;
+              container.appendChild(div);
+            });
+          });
       }
 
+      // === TRANSAKSI ===
       function simpanAgen() {
         let id = document.getElementById("modalId").value.trim();
         const nama = document.getElementById("modalNama").value.trim();
@@ -555,9 +720,9 @@
         } else {
           return;
         }
-        db.ref(`data/${currentPeriode}/transaksi`).push(data);
-        resetFormTransaksi();
-        loadAllData();
+        db.ref(`data/${currentPeriode}/transaksi`).push(data).then(() => {
+          resetFormTransaksi();
+        });
       }
 
       function resetFormTransaksi() {
@@ -567,9 +732,16 @@
         document.getElementById("tglTf").value = "";
       }
 
+      // ✅ REALTIME + CLEANUP
       function loadAllData() {
         if (!currentPeriode) return;
-        db.ref(`data/${currentPeriode}/transaksi`).on("value", (snap) => {
+
+        if (transaksiListener) {
+          transaksiListener();
+        }
+
+        const ref = db.ref(`data/${currentPeriode}/transaksi`);
+        const callback = (snap) => {
           const trans = snap.val() || {};
           const tbodyR = document.getElementById("tbodyRiwayat");
           const tbodyA = document.getElementById("tbodyRekapAgen");
@@ -580,6 +752,7 @@
           let totalSetoran = 0;
           let totalTf = 0;
           let totalV3 = 0, totalV5 = 0;
+
           Object.entries(trans).forEach(([key, t]) => {
             const ambil = t.jenis === "ambil";
             const setor = t.jenis === "setor";
@@ -617,6 +790,7 @@
               totalTf += t.nominal;
             }
           });
+
           Object.entries(agenMap).forEach(([id, data]) => {
             const nama = agenCache[id] || id;
             const utang = data.ambil - data.setor;
@@ -629,46 +803,60 @@
             `;
             tbodyA.appendChild(tr);
           });
+
           document.getElementById("totalAmbilFooter").textContent = `Rp. ${totalPengambilan.toLocaleString()}`;
           document.getElementById("totalSetorFooter").textContent = `Rp. ${totalSetoran.toLocaleString()}`;
           document.getElementById("dropV3").textContent = totalV3;
           document.getElementById("dropV5").textContent = totalV5;
+
           db.ref(`data/${currentPeriode}/stok`).once("value", s => {
             const stok = s.val() || { v3: 0, v5: 0 };
             const sisaV3 = Math.max(0, stok.v3 - totalV3);
             const sisaV5 = Math.max(0, stok.v5 - totalV5);
             document.getElementById("sisaV3").textContent = sisaV3;
             document.getElementById("sisaV5").textContent = sisaV5;
+
             const totalYangBelumDiterima = Math.max(0, totalPengambilan - totalSetoran);
             document.getElementById("rek2").textContent = totalYangBelumDiterima.toLocaleString();
             document.getElementById("rek3").textContent = totalSetoran.toLocaleString();
+
             const totalStokAwal = (stok.v3 * 2550) + (stok.v5 * 4250);
             document.getElementById("rek1").textContent = totalStokAwal.toLocaleString();
+
             const totalGlobal = stok.v3 * HARGA_V3_GLOBAL + stok.v5 * HARGA_V5_GLOBAL;
             document.getElementById("rek4").textContent = totalGlobal.toLocaleString();
             document.getElementById("rek5").textContent = totalTf.toLocaleString();
             document.getElementById("rek6").textContent = (totalGlobal - totalTf).toLocaleString();
+
             const danaBarang = (sisaV3 * 2550) + (sisaV5 * 4250);
             document.getElementById("rek7").textContent = danaBarang.toLocaleString();
           });
-        });
+        };
+
+        ref.on("value", callback);
+        transaksiListener = () => ref.off("value", callback);
       }
 
-      function editTransaksi(key, data) {
-        if (confirm("Edit transaksi ini?")) {
-          db.ref(`data/${currentPeriode}/transaksi/${key}`).remove().then(() => {
-            if (data.jenis === "ambil") {
-              document.getElementById("agenAmbil").value = data.agen;
-              document.getElementById("v3Ambil").value = data.v3;
-              document.getElementById("v5Ambil").value = data.v5;
-              document.getElementById("tglAmbil").value = data.tgl;
-            } else if (data.jenis === "setor") {
-              document.getElementById("agenSetor").value = data.agen;
-              document.getElementById("nominalSetor").value = data.nominal;
-              document.getElementById("tglSetor").value = data.tgl;
-            }
-            simpanTransaksi(data.jenis);
-          });
+      function editTransaksi(key, dataStr) {
+        try {
+          const data = JSON.parse(dataStr.replace(/&quot;/g, '"'));
+          if (confirm("Edit transaksi ini?")) {
+            db.ref(`data/${currentPeriode}/transaksi/${key}`).remove().then(() => {
+              if (data.jenis === "ambil") {
+                document.getElementById("agenAmbil").value = data.agen;
+                document.getElementById("v3Ambil").value = data.v3;
+                document.getElementById("v5Ambil").value = data.v5;
+                document.getElementById("tglAmbil").value = data.tgl;
+              } else if (data.jenis === "setor") {
+                document.getElementById("agenSetor").value = data.agen;
+                document.getElementById("nominalSetor").value = data.nominal;
+                document.getElementById("tglSetor").value = data.tgl;
+              }
+              simpanTransaksi(data.jenis);
+            });
+          }
+        } catch (e) {
+          alert("Gagal memproses edit.");
         }
       }
 
