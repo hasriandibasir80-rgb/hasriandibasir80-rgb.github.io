@@ -3,114 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrasi Management Kelas</title>
+    <title>Tata Kelola 139</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f8ff; /* Warna latar belakang lembut */
+  body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f8ff; /* Warna latar belakang lembut */
         }
         .container {
-            max-width: 800px;
-            margin: auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .back-btn {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            padding: 10px 15px;
-            background-color: #7f8c8d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none; /* Hapus garis bawah jika tombol adalah link */
-        }
-        .back-btn:hover {
-            background-color: #6c7b8b; /* Warna saat dihover */
+  text-align: center;
+  color: #2c3e50;
         }
         .section {
-            margin-bottom: 25px;
+  margin-bottom: 25px;
         }
-        h2 {
-            color: #34495e;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
+  label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
         }
-        ul {
-            padding-left: 20px;
+  input[type="text"] {
+  width: 70%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
         }
-        li {
-            margin-bottom: 10px;
-            line-height: 1.5;
+  button {
+  padding: 10px 15px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
         }
-        /* Tombol untuk sub-fitur jika diperlukan di masa mendatang */
-        .sub-feature-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: left; /* Rata kiri agar teks tombol tidak di tengah */
-            font-size: 14px;
+        .btn-primary {
+  background-color: #3498db;
+  color: white;
         }
-        .sub-feature-btn:hover {
-            background-color: #2980b9;
+        .btn-secondary {
+  background-color: #9b59b6;
+  color: white;
+        }
+        .btn-success {
+  background-color: #2ecc71;
+  color: white;
+        }
+        .semester-buttons, .feature-buttons {
+  display: none; /* Awalnya disembunyikan */
+  margin-top: 20px;
+  text-align: center;
+        }
+        .feature-buttons.active {
+  display: block; /* Ditampilkan saat dipilih */
+        }
+        .semester-btn {
+  background-color: #f39c12;
+  color: white;
+  margin: 0 10px;
+        }
+        .back-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background-color: #7f8c8d;
+  color: white;
+  display: none; /* Tombol kembali tidak muncul di halaman utama */
         }
     </style>
 </head>
 <body>
-
-    <!-- Tombol Kembali -->
-    <a href="tatakelola139.html" class="back-btn">← Kembali ke Menu Utama</a>
-
     <div class="container">
-        <h1>Administrasi Management Kelas</h1>
-
-        <!-- Sub-fitur Management Kelas -->
+        <h1>Sistem Tata Kelola Kelas</h1>
+  <!-- Bagian Tahun Ajaran -->
         <div class="section">
-            <h2>Daftar Sub-Fitur</h2>
-            <ul>
-                <li><strong>2A.</strong> Tambah Siswa (Placeholder)</li>
-                <li><strong>2B.</strong> Absensi Kelas (Placeholder)</li>
-                <li><strong>2C.</strong> Jurnal Peristiwa (Placeholder)</li>
-                <li><strong>2D.</strong> (Placeholder)</li>
-                <li><strong>2E.</strong> (Placeholder)</li>
-                <li><strong>2F.</strong> (Placeholder)</li>
-                <li><strong>2G.</strong> (Placeholder)</li>
-            </ul>
+            <label for="tahunAjaran">Tahun Ajaran:</label>
+            <input type="text" id="tahunAjaran" placeholder="Contoh: 2025/2026">
+            <button type="button" class="btn-primary" onclick="tambahTahun()">+ Tahun Ajaran</button>
+            <button type="button" class="btn-success" onclick="simpanTahun()">Simpan</button>
         </div>
-
-        <!-- Contoh alternatif jika ingin menggunakan tombol untuk masing-masing sub-fitur -->
-        <!--
+  <!-- Bagian Kelas -->
         <div class="section">
-            <h2>Akses Cepat Sub-Fitur</h2>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2A belum tersedia')">2A. Tambah Siswa</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2B belum tersedia')">2B. Absensi Kelas</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2C belum tersedia')">2C. Jurnal Peristiwa</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2D belum tersedia')">2D. Placeholder</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2E belum tersedia')">2E. Placeholder</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2F belum tersedia')">2F. Placeholder</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 2G belum tersedia')">2G. Placeholder</button>
+            <label for="kelas">Kelas:</label>
+            <input type="text" id="kelas" placeholder="Contoh: 1.2.3.4.5.6">
+            <button type="button" class="btn-primary" onclick="tambahKelas()">+ Kelas</button>
+            <button type="button" class="btn-success" onclick="simpanKelas()">Simpan</button>
         </div>
-        -->
-
+  <!-- Bagian Beranda -->
+        <div class="section">
+            <h2>Beranda</h2>
+            <div class="semester-buttons">
+                <button type="button" class="btn-secondary semester-btn" onclick="tampilkanFitur('ganjil')">Semester Ganjil</button>
+                <button type="button" class="btn-secondary semester-btn" onclick="tampilkanFitur('genap')">Semester Genap</button>
+            </div>
+        </div>
+  <!-- Tombol Fitur Utama (muncul setelah memilih semester) -->
+        <div id="fiturGanjil" class="feature-buttons">
+            <h3>Fitur Semester Ganjil</h3>
+            <!-- Tautan diubah menjadi 'app.html' karena GitHub Pages merename 1.app.html -->
+            <button type="button" class="btn-success" onclick="window.location.href='app.html'">Administrasi Perangkat Pembelajaran</button>
+            <button type="button" class="btn-success" onclick="window.location.href='amk.html'">Administrasi Management Kelas</button>
+            <button type="button" class="btn-success" onclick="window.location.href='ape.html'">Administrasi Penilaian dan Evaluasi</button>
+        </div>
+        <div id="fiturGenap" class="feature-buttons">
+            <h3>Fitur Semester Genap</h3>
+            <!-- Tautan diubah menjadi 'app.html' karena GitHub Pages merename 1.app.html -->
+            <button type="button" class="btn-success" onclick="window.location.href='app.html'">Administrasi Perangkat Pembelajaran</button>
+            <button type="button" class="btn-success" onclick="window.location.href='amk.html'">Administrasi Management Kelas</button>
+            <button type="button" class="btn-success" onclick="window.location.href='ape.html'">Administrasi Penilaian dan Evaluasi</button>
+        </div>
     </div>
-
+    <script>
+        // Fungsi sederhana untuk tombol (+) dan (Simpan)
+  function tambahTahun() {
+  const input = document.getElementById('tahunAjaran');
+  alert('Fungsi "Tambah Tahun Ajaran" dipicu. Input saat ini: ' + input.value);
+            // Di sini nanti bisa ditambahkan logika untuk menambah ke daftar atau mengosongkan
+        }
+  function simpanTahun() {
+  const input = document.getElementById('tahunAjaran');
+  if (input.value.trim() !== "") {
+  alert('Tahun Ajaran "' + input.value + '" disimpan sementara.');
+                // Di sini nanti bisa ditambahkan logika untuk menyimpan ke localStorage atau Firebase
+            } else {
+  alert('Silakan isi Tahun Ajaran terlebih dahulu.');
+            }
+        }
+  function tambahKelas() {
+  const input = document.getElementById('kelas');
+  alert('Fungsi "Tambah Kelas" dipicu. Input saat ini: ' + input.value);
+            // Di sini nanti bisa ditambahkan logika untuk menambah ke daftar atau mengosongkan
+        }
+  function simpanKelas() {
+  const input = document.getElementById('kelas');
+  if (input.value.trim() !== "") {
+  alert('Kelas "' + input.value + '" disimpan sementara.');
+                // Di sini nanti bisa ditambahkan logika untuk menyimpan ke localStorage atau Firebase
+            } else {
+  alert('Silakan isi Kelas terlebih dahulu.');
+            }
+        }
+        // Fungsi untuk menampilkan tombol fitur berdasarkan semester
+  function tampilkanFitur(semester) {
+            // Sembunyikan semua bagian fitur
+  document.getElementById('fiturGanjil').classList.remove('active');
+  document.getElementById('fiturGenap').classList.remove('active');
+            // Tampilkan bagian fitur yang sesuai
+  if (semester === 'ganjil') {
+  document.getElementById('fiturGanjil').classList.add('active');
+            } else if (semester === 'genap') {
+  document.getElementById('fiturGenap').classList.add('active');
+        }
+        }
+        // Tampilkan tombol semester setelah halaman dimuat
+  document.addEventListener('DOMContentLoaded', function() {
+  document.querySelector('.semester-buttons').style.display = 'block';
+        });
+    </script>
 </body>
 </html>
-
