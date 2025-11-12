@@ -111,6 +111,44 @@
 
     </div>
 
+    <!-- Firebase SDKs -->
+    <!-- Firebase App (required) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <!-- Firebase Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <script>
+        // 1. Konfigurasi Firebase (Menggunakan data dari file bilal 1.docx)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5stzd9mu0n58o_QYL5Jt1aXOP9ANQl80",
+            authDomain: "sd139lamanda-d7e39.firebaseapp.com",
+            databaseURL: "https://sd139lamanda-d7e39-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sd139lamanda-d7e39",
+            storageBucket: "sd139lamanda-d7e39.firebasestorage.app",
+            messagingSenderId: "101544011485",
+            appId: "1:101544011485:web:74c0fa59d3c4bf74451d34"
+        };
+
+        // 2. Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(); // Inisialisasi database
+
+        // Sekarang file ini siap berinteraksi dengan Firebase Realtime Database
+        console.log("Firebase SDK Loaded and Initialized for app.html");
+
+        // Contoh: Menyimpan data ke database (akan aktif saat Anda uncomment dan mengganti path)
+        // db.ref('path/ke/data').set({
+        //     nama: 'Contoh Data dari app.html',
+        //     timestamp: Date.now()
+        // });
+
+        // Contoh: Membaca data dari database (akan aktif saat Anda uncomment dan mengganti path)
+        // db.ref('path/ke/data').once('value').then((snapshot) => {
+        //     const data = snapshot.val();
+        //     console.log("Data dari Realtime DB:", data);
+        // });
+
+    </script>
+
 </body>
 </html>
-
