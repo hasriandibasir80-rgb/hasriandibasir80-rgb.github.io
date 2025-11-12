@@ -9,7 +9,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f0f8ff; /* Warna latar belakang lembut */
+            background-color: #f0f8ff;
         }
         .container {
             max-width: 800px;
@@ -34,10 +34,10 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            text-decoration: none; /* Hapus garis bawah jika tombol adalah link */
+            text-decoration: none;
         }
         .back-btn:hover {
-            background-color: #6c7b8b; /* Warna saat dihover */
+            background-color: #6c7b8b;
         }
         .section {
             margin-bottom: 25px;
@@ -54,7 +54,6 @@
             margin-bottom: 10px;
             line-height: 1.5;
         }
-        /* Tombol untuk sub-fitur jika diperlukan di masa mendatang */
         .sub-feature-btn {
             display: block;
             width: 100%;
@@ -65,60 +64,67 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            text-align: left; /* Rata kiri agar teks tombol tidak di tengah */
+            text-align: left;
             font-size: 14px;
         }
         .sub-feature-btn:hover {
             background-color: #2980b9;
         }
+        .auth-status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .auth-status.authenticated {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .auth-status.unauthenticated {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Tombol Kembali -->
     <a href="tatakelola139.html" class="back-btn">← Kembali ke Menu Utama</a>
 
-    <div class="container">
+    <div id="statusDiv" class="auth-status unauthenticated">
+        Memeriksa status login...
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
         <h1>Administrasi Perangkat Pembelajaran</h1>
 
-        <!-- Sub-fitur Perangkat Pembelajaran -->
         <div class="section">
             <h2>Daftar Perangkat</h2>
             <ul>
-                <li><strong>1.A.</strong> Silabus (Placeholder)</li>
-                <li><strong>1.B.</strong> Rencana Pelaksanaan Pembelajaran (RPP) (Placeholder)</li>
-                <li><strong>1.C.</strong> Modul Ajar (Placeholder)</li>
-                <li><strong>1.D.</strong> Bahan Ajar (Placeholder)</li>
-                <li><strong>1.E.</strong> Media Pembelajaran (Placeholder)</li>
-                <li><strong>1.F.</strong> Instrumen Penilaian (Placeholder)</li>
-                <li><strong>1.G.</strong> Laporan Pelaksanaan Pembelajaran (Placeholder)</li>
+                <li><strong>1.A.</strong> Silabus</li>
+                <li><strong>1.B.</strong> Rencana Pelaksanaan Pembelajaran (RPP)</li>
+                <li><strong>1.C.</strong> Modul Ajar</li>
+                <li><strong>1.D.</strong> Bahan Ajar</li>
+                <li><strong>1.E.</strong> Media Pembelajaran</li>
+                <li><strong>1.F.</strong> Instrumen Penilaian</li>
+                <li><strong>1.G.</strong> Laporan Pelaksanaan Pembelajaran</li>
             </ul>
         </div>
 
-        <!-- Contoh alternatif jika ingin menggunakan tombol untuk masing-masing sub-fitur -->
-        <!--
         <div class="section">
-            <h2>Akses Cepat Sub-Fitur</h2>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.A belum tersedia')">1.A. Silabus</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.B belum tersedia')">1.B. Rencana Pelaksanaan Pembelajaran (RPP)</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.C belum tersedia')">1.C. Modul Ajar</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.D belum tersedia')">1.D. Bahan Ajar</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.E belum tersedia')">1.E. Media Pembelajaran</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.F belum tersedia')">1.F. Instrumen Penilaian</button>
-            <button class="sub-feature-btn" onclick="alert('Fitur 1.G belum tersedia')">1.G. Laporan Pelaksanaan Pembelajaran</button>
+            <h2>1.A. Silabus</h2>
+            <label for="silabusInput">Isi Silabus:</label>
+            <textarea id="silabusInput" rows="10" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
+            <button class="sub-feature-btn" onclick="simpanSilabus()">Simpan Silabus ke Database</button>
+            <button class="sub-feature-btn" onclick="muatSilabus()">Muat Silabus dari Database</button>
         </div>
-        -->
 
     </div>
 
     <!-- Firebase SDKs -->
-    <!-- Firebase App (required) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <!-- Firebase Realtime Database -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
-        // 1. Konfigurasi Firebase (Menggunakan data dari file bilal 1.docx)
         const firebaseConfig = {
             apiKey: "AIzaSyD5stzd9mu0n58o_QYL5Jt1aXOP9ANQl80",
             authDomain: "sd139lamanda-d7e39.firebaseapp.com",
@@ -129,24 +135,82 @@
             appId: "1:101544011485:web:74c0fa59d3c4bf74451d34"
         };
 
-        // 2. Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(); // Inisialisasi database
+        const db = firebase.database();
 
-        // Sekarang file ini siap berinteraksi dengan Firebase Realtime Database
-        console.log("Firebase SDK Loaded and Initialized for app.html");
+        // Fungsi untuk mendapatkan userId dari localStorage
+        function getUserId() {
+            return localStorage.getItem('userUID'); // Gunakan kunci yang sama seperti di tatakelola139.html
+        }
 
-        // Contoh: Menyimpan data ke database (akan aktif saat Anda uncomment dan mengganti path)
-        // db.ref('path/ke/data').set({
-        //     nama: 'Contoh Data dari app.html',
-        //     timestamp: Date.now()
-        // });
+        // Fungsi untuk memperbarui UI berdasarkan status login
+        function perbaruiUI() {
+            const userId = getUserId();
+            if (userId) {
+                document.getElementById('statusDiv').className = 'auth-status authenticated';
+                document.getElementById('statusDiv').textContent = 'Status: Terhubung ke database.';
+                document.getElementById('mainContent').style.display = 'block';
+            } else {
+                document.getElementById('statusDiv').className = 'auth-status unauthenticated';
+                document.getElementById('statusDiv').textContent = 'Status: Tidak login. Silakan login di menu utama.';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        }
 
-        // Contoh: Membaca data dari database (akan aktif saat Anda uncomment dan mengganti path)
-        // db.ref('path/ke/data').once('value').then((snapshot) => {
-        //     const data = snapshot.val();
-        //     console.log("Data dari Realtime DB:", data);
-        // });
+        // Panggil perbaruiUI saat halaman dimuat
+        window.onload = function() {
+            perbaruiUI();
+        };
+
+        // Fungsi untuk menyimpan data Silabus
+        function simpanSilabus() {
+            const userId = getUserId();
+            if (!userId) {
+                alert('Silakan login terlebih dahulu di menu utama.');
+                return;
+            }
+
+            const isiSilabus = document.getElementById('silabusInput').value;
+
+            const ref = db.ref(`users/${userId}/perangkat_pembelajaran/silabus`);
+            ref.set({
+                isi: isiSilabus,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            })
+            .then(() => {
+                alert('Silabus berhasil disimpan ke database.');
+            })
+            .catch((error) => {
+                console.error("Gagal menyimpan silabus: ", error);
+                alert("Gagal menyimpan silabus: " + error.message);
+            });
+        }
+
+        // Fungsi untuk memuat data Silabus
+        function muatSilabus() {
+            const userId = getUserId();
+            if (!userId) {
+                alert('Silakan login terlebih dahulu di menu utama.');
+                return;
+            }
+
+            const ref = db.ref(`users/${userId}/perangkat_pembelajaran/silabus`);
+            ref.once('value')
+                .then((snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.isi) {
+                        document.getElementById('silabusInput').value = data.isi;
+                        alert('Silabus berhasil dimuat dari database.');
+                    } else {
+                        alert('Silabus belum pernah disimpan sebelumnya.');
+                        document.getElementById('silabusInput').value = '';
+                    }
+                })
+                .catch((error) => {
+                    console.error("Gagal memuat silabus: ", error);
+                    alert("Gagal memuat silabus: " + error.message);
+                });
+        }
 
     </script>
 
