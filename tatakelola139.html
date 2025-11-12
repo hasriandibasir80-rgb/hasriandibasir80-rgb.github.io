@@ -138,16 +138,16 @@
             <label for=" tahunAjaran "> Tahun   Ajaran : </label>
             <input type="text" id=" tahunAjaran " placeholder=" Contoh : 2025/2026">
             <button type="button" class=" btn -primary"  onclick =" tambahTahun ( )">+  Tahun   Ajaran </button>
-            <!-- Tombol Simpan sekarang memanggil fungsi yang menyimpan ke Firebase -->
-            <button type="button" class=" btn -success"  onclick =" simpanTahunKeFirebase ( )"> Simpan  ke  Firebase </button>
+            <!-- Tombol ini tetap memanggil simpanTahun, tapi isi fungsinya yang berubah -->
+            <button type="button" class=" btn -success"  onclick =" simpanTahun ( )"> Simpan  ke  Firebase </button> <!-- Nama tombol diubah agar lebih jelas -->
         </div>
   <!--  Bagian   Kelas  -->
         <div class="section">
             <label for=" kelas "> Kelas : </label>
             <input type="text" id=" kelas " placeholder=" Contoh : 1.2.3.4.5.6">
             <button type="button" class=" btn -primary"  onclick =" tambahKelas ( )">+  Kelas </button>
-            <!-- Tombol Simpan sekarang memanggil fungsi yang menyimpan ke Firebase -->
-            <button type="button" class=" btn -success"  onclick =" simpanKelasKeFirebase ( )"> Simpan  ke  Firebase </button>
+            <!-- Tombol ini tetap memanggil simpanKelas, tapi isi fungsinya yang berubah -->
+            <button type="button" class=" btn -success"  onclick =" simpanKelas ( )"> Simpan  ke  Firebase </button> <!-- Nama tombol diubah agar lebih jelas -->
         </div>
   <!--  Bagian   Beranda  -->
         <div class="section">
@@ -255,13 +255,14 @@
         });
 
         // --- Fungsi-Fungsi yang DIPERBARUI untuk menyimpan ke Firebase ---
+        // Kita ganti isi fungsi simpanTahun dan simpanKelas, bukan namanya
   function   tambahTahun () {
   if  (! currentUser ) { alert(' Silakan  login  terlebih   dahulu .'); return; } // Cegah jika tidak login
   const  input =  document.getElementById (' tahunAjaran ');
   input.value = ''; // Reset input
   alert( ' Input  Tahun   Ajaran   telah   direset .');
         }
-  function   simpanTahunKeFirebase () { // Nama fungsi diubah dan logika diperbarui
+  function   simpanTahun () { // Nama fungsi TETAP, hanya isi yang diganti
   if  (! currentUser ) { alert(' Silakan  login  terlebih   dahulu .'); return; } // Cegah jika tidak login
   const  input =  document.getElementById (' tahunAjaran ');
   const  tahunAjaran =  input.value.trim ();
@@ -287,7 +288,7 @@
   input.value = ''; // Reset input
   alert( ' Input  Kelas   telah   direset .');
         }
-  function   simpanKelasKeFirebase () { // Nama fungsi diubah dan logika diperbarui
+  function   simpanKelas () { // Nama fungsi TETAP, hanya isi yang diganti
   if  (! currentUser ) { alert(' Silakan  login  terlebih   dahulu .'); return; } // Cegah jika tidak login
   const  input =  document.getElementById (' kelas ');
   const  kelas =  input.value.trim ();
